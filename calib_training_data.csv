@@ -1,0 +1,31 @@
+import numpy as np
+import pandas as pd
+
+np.random.seed(42)
+n_samples = 1000
+
+# Simulate environmental factors
+raw_pm25 = np.random.uniform(30, 400, n_samples)
+temperature = np.random.uniform(10, 45, n_samples)
+relative_humidity = np.random.uniform(20, 95, n_samples)
+days_since_calibration = np.random.randint(1, 120, n_samples)
+
+# Ground truth physics formula + noise:
+# High RH artificially inflates raw sensor readings; drift increases with days
+inflation_factor = 1.0 + np.maximum(0.0, (relative_humidity - 60) / 100)
+drift_factor = 1.0 + (days_since_calibration / 300.0)
+
+ground_truth_pm25 = (raw_pm25 / (inflation_factor * drift_factor)) + np.random.normal(0, 5, n_samples)
+ground_truth_pm25 = np.maximum(5.0, ground_truth_pm25) # floor at 5
+
+# Create DataFrame
+df = pd.DataFrame({
+    'raw_pm25': raw_pm25,
+    'temperature': temperature,
+    'relative_humidity': relative_humidity,
+    'days_since_calibration': days_since_calibration,
+    'ground_truth_pm25': ground_truth_pm25
+})
+
+df.to_csv("calib_training_data.csv", index=False)
+print("Synthetic calibration dataset created successfully!")
